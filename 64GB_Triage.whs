@@ -1,0 +1,193 @@
+// Data Carving Script for producing 64 GB chunks for triage purposes on data
+// Chunks can be reviewed using more dedicated processess
+// brya-n
+// Prompt user to do what is correct
+MessageBox "Please ensure you have selected the last byte of the data, otherwise this script will fail."
+MessageBox "This script is designed for WinHex 18.4.  It has not been tested on other versions."
+
+// Prompt user to do what is correct
+Assign USER_RESPONSE_I 1
+GetUserInputI USER_RESPONSE_I "Specify how many output locations you have, 1 or 2."
+MessageBox USER_RESPONSE_I
+IfEqual 0 USER_RESPONSE_I
+	MessageBox "No output location selected, script terminating."
+	Terminate
+EndIf
+IfGreater 2 USER_RESPONSE_I
+	MessageBox "Script will pause and prompt you to swap out the output location after chunking out 8 64GB chunks."
+	Assign CHUNK_PAUSE 1
+EndIf
+IfEqual 2 USER_RESPONSE_I
+	MessageBox "Script will continually chunk out 64 GB chunks, 8 x chunks per two location. It will fail if location is not ready"
+	Assign CHUNK_PAUSE 0
+EndIf
+
+
+// Prompt user to do what is correct for save location
+Assign USER_RESPONSE_T ""
+GetUserInput USER_RESPONSE_T "Specify the letter for the first mapped drive.  Export to root of this drive only. Suggest External drive."
+Assign EXPORT_DRIVE_A USER_RESPONSE_T
+Assign EXPORT_DRIVE_B USER_RESPONSE_T
+IfEqual CHUNK_PAUSE 0
+	GetUserInput USER_RESPONSE_T "Specify the letter for the second mapped drive.  Export to root of this drive only. Suggest External drive."
+	Assign EXPORT_DRIVE_B USER_RESPONSE_T
+EndIf
+IfEqual CHUNK_PAUSE 1
+	MessageBox "All exports will be saved to this drive, with a pause after 8 exports of 64 GB."
+EndIf
+StrCat EXPORT_DRIVE_A ":\"
+StrCat EXPORT_DRIVE_B ":\"
+
+
+// Prompt user for brief label
+Assign USER_RESPONSE_T ""
+GetUserInput USER_RESPONSE_T "Give a label for this data export, use letters only of maximum length 8"
+Assign FILENAME USER_RESPONSE_T
+	
+// Reuse USER_RESPONSE_T as message
+Assign USER_RESPONSE_T "Output to: "
+StrCat USER_RESPONSE_T EXPORT_DRIVE_A
+StrCat USER_RESPONSE_T FILENAME
+StrCat USER_RESPONSE_T "... and: "
+StrCat USER_RESPONSE_T EXPORT_DRIVE_B
+StrCat USER_RESPONSE_T FILENAME
+StrCat USER_RESPONSE_T ".."
+MessageBox USER_RESPONSE_T
+	
+// Select range of the data
+Assign TOTAL_START 0x00
+Assign TOTAL_END CurrentPos
+
+// Specify size of each chunk
+// Test Size:         1*1024*1024*64     64 MB
+// Working Size:   1024*1024*1024*64     64 GB
+Assign CHUNK_SIZE (1*1024*1024*64)
+
+// Specify the initial start position
+Assign CHUNK_START (TOTAL_START)
+Assign CHUNK_END (CHUNK_START+CHUNK_SIZE-1)
+Assign COUNTER 8
+
+// 128 = 8 TB drive
+Assign MY_LOOP 128
+
+// Test First Chunk
+Block CHUNK_START CHUNK_END
+{
+	// Prepare next chunk values
+	Assign CHUNK_START_NEXT (CHUNK_START+CHUNK_SIZE)
+	Assign CHUNK_END_NEXT (CHUNK_END+CHUNK_SIZE)
+
+	// Check NEXT CHUNK not last CHUNK
+	Assign CHUNK_CHECK (TOTAL_END-CHUNK_END)
+	IfGreater CHUNK_SIZE CHUNK_CHECK
+		Assign CHUNK_END_NEXT TOTAL_END
+	EndIf
+
+	// brya-n Recursive Loop Created for padding offsets
+	Assign USER_RESPONSE_T ""
+	Assign USER_RESPONSE_I TOTAL_END
+	Assign TOTAL_PAD 0
+	Assign BYPASS_LOOPA 100
+	{
+		Assign USER_RESPONSE_I (USER_RESPONSE_I/10)
+		inc TOTAL_PAD
+		IfGreater 10 USER_RESPONSE_I
+			// Unlock loop
+			ExitLoop
+		EndIf		
+	}[BYPASS_LOOPA]
+
+	Release BYPASS_LOOP
+	Release USER_RESPONSE_T
+	Release USER_RESPONSE_I
+
+	// brya-n Recursive loop for padding start offset in filename
+	Assign USER_RESPONSE_T ""
+	Assign USER_RESPONSE_I (TOTAL_END/(CHUNK_START+1))
+	Assign BYPASS_LOOPB (TOTAL_PAD-1)
+	{
+		StrCat USER_RESPONSE_T "0"
+		Assign USER_RESPONSE_I (USER_RESPONSE_I/10)
+		IfGreater 10 USER_RESPONSE_I
+			// Unlock loop
+			ExitLoop
+		EndIf		
+	}[BYPASS_LOOPB]
+
+	// Pad chunk start offset in decimal
+	Assign PADDED_START USER_RESPONSE_T
+	IntToStr USER_RESPONSE_T CHUNK_START
+	StrCat PADDED_START USER_RESPONSE_T
+
+	Release USER_RESPONSE_T
+	Release USER_RESPONSE_I
+	Release BYPASS_LOOPB	
+
+	
+	// brya-n Recursive loop for padding end offset in filename
+	Assign USER_RESPONSE_U ""
+	Assign USER_RESPONSE_J (TOTAL_END/CHUNK_END)
+	Assign BYPASS_LOOPC (TOTAL_PAD-1)
+	{
+		StrCat USER_RESPONSE_U "0"
+		Assign USER_RESPONSE_J (USER_RESPONSE_J/10)
+		IfGreater 10 USER_RESPONSE_J
+			// Unlock loop
+			ExitLoop
+		EndIf		
+	}[BYPASS_LOOPC]
+
+	// Pad chunk start offset in decimal
+	Assign PADDED_END USER_RESPONSE_U
+	IntToStr USER_RESPONSE_U CHUNK_END
+	StrCat PADDED_END USER_RESPONSE_U
+
+	Release USER_RESPONSE_U
+	Release USER_RESPONSE_J
+	Release BYPASS_LOOPC	
+
+	// Specify FILENAME
+	StrCat FILENAME "_Offset-"
+	StrCat FILENAME PADDED_START
+	StrCat FILENAME "-"
+	StrCat FILENAME PADDED_END
+	StrCat FILENAME ".HEX"
+
+	// Check Filename - comment out if validated
+	// MessageBox FILENAME
+
+	// Counter for every 8 exports
+	IfEqual CHUNK_PAUSE 1
+		IfEqual COUNTER 0
+		// Counter will be reset to 8 but message given
+		MessageBox "Use this opportunity to swap over an empty export drive at the same location. Continue when done."
+		Assign COUNTER 8
+		EndIf
+	EndIf
+	IfEqual CHUNK_PAUSE 0
+		IfEqual COUNTER 0
+		//  Counter decrease to 0 switch location using holding temporary variable
+			Assign TEMP_TXT EXPORT_DRIVE_A
+			Assign EXPORT_DRIVE_A EXPORT_DRIVE_B
+			Assign EXPORT_DRIVE_B TEMP_TEXT
+			Assign COUNTER 8
+			Release TEMP_TEXT
+		EndIf
+	EndIf	
+	
+	// Specify full export path
+	Assign EXPORT_TEXT EXPORT_DRIVE_A
+	StrCat EXPORT_TEXT FILENAME
+	
+	// Check Full Export path - comment out if validated
+	// MessageBox EXPORT_TEXT
+	
+	// Export verified
+	CopyIntoNewFile EXPORT_TEXT
+	
+	// Prepare next file values
+	Dec COUNTER
+	Assign CHUNK_START CHUNK_START_NEXT
+	Assign CHUNK_END CHUNK_END_NEXT
+}[64]
