@@ -1,5 +1,7 @@
 // Data Carving Script for producing 64 GB chunks for triage purposes on data
 // Chunks can be reviewed using more dedicated processess
+// My label for the filename extension is .HEX to signify has been exported using WinHex
+// After all, a file extension is simply a label designating what is within the data, a means for a file system to search
 // brya-n
 // Prompt user to do what is correct
 MessageBox "Please ensure you have selected the last byte of the data, otherwise this script will fail."
