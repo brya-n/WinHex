@@ -77,11 +77,11 @@ Note:  each script module defined as new file of zero bytes
 >>MyScript_Module6 ECHO       Assign LOOP_END 0
 >>MyScript_Module6 ECHO    EndIf
 >>MyScript_Module6 ECHO    ^/^/ Loop Condition
->>MyScript_Module6 ECHO    }[LOOP_END]
+>>MyScript_Module6 ECHO }[LOOP_END]
 
 . . .
 >>MyScript_Module8 ECHO ^/^/ Equality of a nibble for frame, FRAME_TYPE = Byte
->>MyScript_Module0 ECHO IfEqual (FRAME_TYPE%16) %_KEY_FRAME%
+>>MyScript_Module0 ECHO IfEqual (FRAME_TYPE^%16) %_KEY_FRAME%
 
 . . . 
 
