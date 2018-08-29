@@ -20,7 +20,7 @@ From my experience
   e.	File-extension:   for single frames used .HEX  (it is a label after all, ref winHEX)
 
 6.	Binary concatenated required frames in order to construct required video sequence
-  a.	Windows Command Line:   COPY /B *.HEX Camera_FileOffsetStart-End.HXX
+  a.	Binary concatenate all .HEX to Camera_FileOffsetStart-End.HXX
   b.	HXX = custom file extension to signify concatenated file  
 
 7.	Used ffplay (ffmpeg framework) to view file at native dimensions
@@ -41,7 +41,20 @@ From my experience
   k.	FFmpeg construct OSD from data carved frame information
   l.	FFmpeg export required information
 
-9.	Sample Batch Structure:
+ 9. One of many useful metadata tools:
+ 
+ EXIFTOOL
+ Programmer:  Phil Harvey
+ Website:     https://www.sno.phy.queensu.ca/~phil/exiftool/
+ 
+ EXIFTOOL -k -a -u -P -v3 -ee -g:3:1
+ 
+ Applying these arguments/parameters to exiftool will provide hexadecimal/byte information
+ Increase your knowledge of the data (if known)
+ 
+10.	Sample Batch Structure:
+
+FINDSTR                    // for eg exports from EXIFTOOL in command line that are of use
 
 SET _EXPORTPATH=" whatever it is"
 SET _REQUIRED_CANERAS=     // Obtained by menu structure
