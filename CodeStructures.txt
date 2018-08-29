@@ -23,7 +23,7 @@ From my experience
   a.	Binary concatenate all .HEX to Camera_FileOffsetStart-End.HXX
   b.	HXX = custom file extension to signify concatenated file  
 
-7.	Used ffplay (ffmpeg framework) to view file at native dimensions
+7.	Used ffplay (ffmpeg framework) to view file at native dimensions [https://www.ffmpeg.org/]
   a.	Ffmpeg to convert 
   b.	HEX files used to also make OSD where needed
 
