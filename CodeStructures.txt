@@ -1,0 +1,90 @@
+WinHex information
+There are different versions of WinHex, the one I was using was WinHex Specialist 18.4
+
+From my experience
+1.	For known video data that can have the video exported
+2.	Start from the end of data 
+3.	Search from this known position (offset) towards offset 0x00
+4.	Carve individual video frames to prepared local directory
+  a.	BlockStart   =  preferred located INDEX or search hit
+  b.	BlockEnd     =  preferred located INDEX or search hit
+  c.	Time/Date  =  may be bitstring, epoch, byte representation
+  d.	Frame type =  keyframe/I-frame viewable often in ffplay/ffmpeg
+  e.	Other known data
+
+5.	Export Padded:  Camera_FileOffset_TimeDate_FrameType.file-extenion
+  a.	Camera:  fixed length string / sub directory from byte analysis (zero indexed)
+  b.	FileOffset:  fixed length string padded with “0” for windows searches
+  c.	TimeDate:  either EPOCH or delimited date stamp
+  d.	FrameType:  from the ‘magic number’ useful for processing
+  e.	File-extension:   for single frames used .HEX  (it is a label after all, ref winHEX)
+
+6.	Binary concatenated required frames in order to construct required video sequence
+  a.	Windows Command Line:   COPY /B *.HEX Camera_FileOffsetStart-End.HXX
+  b.	HXX = custom file extension to signify concatenated file  
+
+7.	Used ffplay (ffmpeg framework) to view file at native dimensions
+  a.	Ffmpeg to convert 
+  b.	HEX files used to also make OSD where needed
+
+8.	Batch scripting has created tailored to data winhex scripts 
+  a.	Modular
+  b.	Standard part(s) of the script echoed to modules
+  c.	Specific part(s) of the script echoed to modules
+  d.	Includes search requirements (time, duration, camera)
+  e.	Includes file information (end offset = (file/data size -1), filename)
+  f.	Includes save location (export directories defined)
+  g.	Binary concatenation of the winhex script modules and resulting exports
+  h.	WinHex Script run only on required data
+  i.	WinHex Script run only on required parameters
+  j.	First frame known to be key-frame
+  k.	FFmpeg construct OSD from data carved frame information
+  l.	FFmpeg export required information
+
+9.	Sample Batch Structure:
+
+SET _EXPORTPATH=" whatever it is"
+SET _REQUIRED_CANERAS=     // Obtained by menu structure
+SET _REQUIRED_TIMEFRAME=   // Obtained by menu structure
+SET _REQUIRED_DURATION=    // Obtained by menu structure
+SET _SOURCE_DATA=          // Obtained by menu structure
+SET _KEY_FRAME=            
+SET _NON_KEY_FRAME=
+
+Note:  each script module defined as new file of zero bytes
+. . . 
+>>MyScript_Module0 ECHO ^/^/ Batch file programmed by brya-n 
+>>MyScript_Module0 ECHO ^/^/ https://github.com/brya-n
+>>MyScript_Module0 ECHO ^/^/ Script auto generated for data carving %_SOURCE_DATA%  
+
+. . .
+
+>>MyScript_Module0 ECHO CloseAll
+>>MyScript_Module0 ECHO TurboOn
+>>MyScript_Module0 ECHO Open "%_SOURCE_DATA%"
+
+. . .
+>>MyScript_Module6 ECHO ^/^/ Determine maximum pad for offset
+>>MyScript_Module6 ECHO Assign MAX_PAD 1
+>>MyScript_Module6 ECHO Assign LOOP_END 200
+>>MyScript_Module6 ECHO {
+>>MyScript_Module6 ECHO    ^/^/ If End of data is greater than current MAX_PAD
+>>MyScript_Module6 ECHO    ^/^/ Multiply MAX_PAD by 10
+>>MyScript_Module6 ECHO    IfGreater BLOCK_END (MAX_PAD*10)
+>>MyScript_Module6 ECHO       Assign MAX_PAD (MAX_PAD*10)
+>>MyScript_Module6 ECHO    Else
+>>MyScript_Module6 ECHO       ^/^/ MAX PAD Calculated, LOOP_END exit^/opened
+>>MyScript_Module6 ECHO       Assign LOOP_END 0
+>>MyScript_Module6 ECHO    EndIf
+>>MyScript_Module6 ECHO    ^/^/ Loop Condition
+>>MyScript_Module6 ECHO    }[LOOP_END]
+
+. . .
+>>MyScript_Module8 ECHO ^/^/ Equality of a nibble for frame, FRAME_TYPE = Byte
+>>MyScript_Module0 ECHO IfEqual (FRAME_TYPE%16) %_KEY_FRAME%
+
+. . . 
+
+Similar structure for each individual frame offset 
+Script design is for each data set
+
